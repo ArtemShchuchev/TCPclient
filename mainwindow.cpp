@@ -16,8 +16,8 @@ MainWindow::MainWindow(QWidget *parent)
 
 
     //При отключении меняем надписи и доступность полей.
-    connect(client, &TCPclient::sig_Disconnected, this, [&]{
-
+    connect(client, &TCPclient::sig_Disconnected, this, [&]
+    {
         ui->lb_connectStatus->setText("Отключено");
         ui->lb_connectStatus->setStyleSheet("color: red");
         ui->pb_connect->setText("Подключиться");
@@ -77,6 +77,7 @@ void MainWindow::DisplayError(uint16_t error)
         break;
     }
 }
+
 /*!
  * \brief Метод отображает квитанцию об успешно выполненном сообщениии
  * \param typeMess ИД успешно выполненного сообщения
@@ -98,7 +99,8 @@ void MainWindow::DisplayConnectStatus(uint16_t status)
 {
     if(status == ERR_CONNECT_TO_HOST)
     {
-        ui->tb_result->append("Ошибка подключения к порту: " + QString::number(ui->spB_port->value()));
+        ui->tb_result->append("Ошибка подключения к порту: " +
+                              QString::number(ui->spB_port->value()));
     }
     else
     {

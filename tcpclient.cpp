@@ -59,6 +59,7 @@ void TCPclient::ConnectToHost(QHostAddress host, uint16_t port)
 {
 
 }
+
 /*
  * \brief Метод отключения от сервера
  */
@@ -66,7 +67,6 @@ void TCPclient::DisconnectFromHost()
 {
 
 }
-
 
 void TCPclient::ReadyReed()
 {
@@ -84,13 +84,12 @@ void TCPclient::ReadyReed()
     while(incStream.atEnd() == false)
     {
         //Если мы обработали предыдущий пакет, мы скинули значение idData в 0
-        if(servHeader.idData == 0)
+        if (servHeader.idData == 0)
         {
-
             //Проверяем количество полученных байт. Если доступных байт меньше чем
             //заголовок, то выходим из обработчика и ждем новую посылку. Каждая новая
             //посылка дописывает данные в конец буфера
-            if(socket->bytesAvailable() < sizeof(ServiceHeader))
+            if (socket->bytesAvailable() < sizeof(ServiceHeader))
             {
                 return;
             }
@@ -98,9 +97,10 @@ void TCPclient::ReadyReed()
             {
                 //Читаем заголовок
                 incStream >> servHeader;
-                //Проверяем на корректность данных. Принимаем решение по заранее известному ID
-                //пакета. Если он "битый" отбрасываем все данные в поисках нового ID.
-                if(servHeader.id != ID)
+                // Проверяем на корректность данных.
+                // Принимаем решение по заранее известному ID пакета.
+                // Если он "битый" отбрасываем все данные в поисках нового ID.
+                if (servHeader.id != ID)
                 {
                     uint16_t hdr = 0;
                     while(incStream.atEnd())
@@ -133,17 +133,14 @@ void TCPclient::ReadyReed()
     }
 }
 
-
 /*
  * Остался метод обработки полученных данных. Согласно протоколу
  * мы должны прочитать данные из сообщения и вывести их в ПИ.
  * Поскольку все типы сообщений нам известны реализуем выбор через
  * switch. Реализуем получение времени.
 */
-
 void TCPclient::ProcessingData(ServiceHeader header, QDataStream &stream)
 {
-
     switch (header.idData)
     {
         case GET_TIME:

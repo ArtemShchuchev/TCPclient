@@ -25,8 +25,8 @@ private slots:
     void ProcessingData(ServiceHeader header, QDataStream &stream);
 
 private:
-QTcpSocket* socket;
-ServiceHeader servHeader;
+    QTcpSocket* socket;
+    ServiceHeader servHeader;
 
 signals:
     void sig_sendFreeSize(uint32_t);
