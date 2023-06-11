@@ -6,7 +6,6 @@
 */
 QDataStream &operator >>(QDataStream &out, ServiceHeader &data)
 {
-
     out >> data.id;
     out >> data.idData;
     out >> data.status;
@@ -15,7 +14,6 @@ QDataStream &operator >>(QDataStream &out, ServiceHeader &data)
 };
 QDataStream &operator <<(QDataStream &in, ServiceHeader &data)
 {
-
     in << data.id;
     in << data.idData;
     in << data.status;
@@ -178,6 +176,13 @@ void TCPclient::ProcessingData(ServiceHeader header, QDataStream &stream)
         }
 
         case GET_SIZE:
+        {
+            uint32_t size;
+            stream >> size;
+            emit sig_sendFreeSize(size);
+            break;
+        }
+
         case GET_STAT:
         {
             StatServer status;
@@ -187,8 +192,22 @@ void TCPclient::ProcessingData(ServiceHeader header, QDataStream &stream)
         }
 
         case SET_DATA:
-        case CLEAR_DATA:
-        default:
-            break;
+        if (header.status == STATUS_SUCCES)
+        {
+            QString data;
+            stream >> data;
+            emit sig_SendReplyForSetData(data);
         }
+        else emit sig_Error(header.status);
+        break;
+
+        case CLEAR_DATA:
+        if (header.status == STATUS_SUCCES) emit sig_Success(CLEAR_DATA);
+        else emit sig_Success(0);
+        break;
+
+        default:
+        emit sig_Error(ERR_NO_FUNCT);
+        break;
+    }
 }

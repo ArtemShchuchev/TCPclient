@@ -20,7 +20,7 @@ public:
 private slots:
     void on_pb_connect_clicked();
     void on_pb_request_clicked();
-
+    void on_le_data_returnPressed();
     void on_cb_request_currentIndexChanged(int index);
 
     void DisplayTime(QDateTime time);

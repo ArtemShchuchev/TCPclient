@@ -34,6 +34,10 @@ MainWindow::MainWindow(QWidget *parent)
     connect(client, &TCPclient::sig_sendTime, this, &MainWindow::DisplayTime);
     connect(client, &TCPclient::sig_connectStatus, this, &MainWindow::DisplayConnectStatus);
     connect(client, &TCPclient::sig_sendStat, this, &MainWindow::DisplayStat);
+    connect(client, &TCPclient::sig_sendFreeSize, this, &MainWindow::DisplayFreeSpace);
+    connect(client, &TCPclient::sig_SendReplyForSetData, this, &MainWindow::SetDataReply);
+    connect(client, &TCPclient::sig_Success, this, &MainWindow::DisplaySuccess);
+    connect(client, &TCPclient::sig_Error, this, &MainWindow::DisplayError);
 }
 
 MainWindow::~MainWindow()
@@ -50,14 +54,18 @@ void MainWindow::DisplayTime(QDateTime time)
     ui->tb_result->append("\nВремя на сервере: " + time.toString());
 }
 
+// Получение инфо о свободном месте на сервере
 void MainWindow::DisplayFreeSpace(uint32_t freeSpace)
 {
-
+    ui->tb_result->append("\nСвободное место на сервере: "
+                          + QString::number(freeSpace)
+                          + " байт");
 }
 
+// Строка отправленная с сервера
 void MainWindow::SetDataReply(QString replyString)
 {
-
+    ui->tb_result->append("\nОтправлено на сервер: " + replyString);
 }
 
 // Получение статистики
@@ -78,14 +86,15 @@ void MainWindow::DisplayError(uint16_t error)
     switch (error)
     {
     case ERR_NO_FREE_SPACE:
-        ui->tb_result->append("Не достаточно места на сервере!");
+        ui->tb_result->append("\nНе достаточно места на сервере!");
         break;
 
     case ERR_NO_FUNCT:
-        ui->tb_result->append("Функционал не реализован!");
+        ui->tb_result->append("\nФункционал не реализован!");
         break;
 
     default:
+        ui->tb_result->append("\nФиг знает, что произошло!");
         break;
     }
 }
@@ -96,12 +105,11 @@ void MainWindow::DisplayError(uint16_t error)
  */
 void MainWindow::DisplaySuccess(uint16_t typeMess)
 {
-    switch (typeMess)
+    if (typeMess == CLEAR_DATA)
     {
-    case CLEAR_DATA:
-    default:
-        break;
+        ui->tb_result->append("\nПамять сервера очищена!");
     }
+    else ui->tb_result->append("\nОшибка очистки памяти!");
 }
 
 /*!
@@ -168,34 +176,42 @@ void MainWindow::on_pb_request_clicked()
        //Получить время
        case 0:
        header.idData = GET_TIME;
+       client->SendRequest(header);
        break;
 
        //Получить свободное место
        case 1:
        header.idData = GET_SIZE;
+       client->SendRequest(header);
        break;
 
        //Получить статистику
        case 2:
        header.idData = GET_STAT;
+       client->SendRequest(header);
        break;
 
        //Отправить данные
        case 3:
-       header.idData = SET_DATA;
+       if (ui->le_data->text() != "")
+       {
+           header.idData = SET_DATA;
+           header.len = ui->le_data->text().toUtf8().size();
+           client->SendData(header, ui->le_data->text());
+           ui->le_data->clear();
+       }
        break;
 
        //Очистить память на сервере
        case 4:
        header.idData = CLEAR_DATA;
+       client->SendRequest(header);
        break;
 
        default:
        ui->tb_result->append("Такой запрос не реализован в текущей версии");
-       return;
+       break;
    }
-
-   client->SendRequest(header);
 }
 
 /*!
@@ -212,4 +228,10 @@ void MainWindow::on_cb_request_currentIndexChanged(int index)
     {
         ui->le_data->setEnabled(false);
     }
+}
+
+// Enter на строке ввода
+void MainWindow::on_le_data_returnPressed()
+{
+    on_pb_request_clicked();
 }
