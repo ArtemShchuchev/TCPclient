@@ -8,12 +8,12 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
 
     client = new TCPclient(this);
+
     //Доступность полей по умолчанию
     ui->le_data->setEnabled(false);
     ui->pb_request->setEnabled(false);
     ui->lb_connectStatus->setText("Отключено");
     ui->lb_connectStatus->setStyleSheet("color: red");
-
 
     //При отключении меняем надписи и доступность полей.
     connect(client, &TCPclient::sig_Disconnected, this, [&]
@@ -30,13 +30,10 @@ MainWindow::MainWindow(QWidget *parent)
         ui->spB_ip4->setEnabled(true);
     });
 
-
-
- /*
-  * Соединяем сигналы со слотами
- */
-
-
+    //Соединяем сигналы со слотами
+    connect(client, &TCPclient::sig_sendTime, this, &MainWindow::DisplayTime);
+    connect(client, &TCPclient::sig_connectStatus, this, &MainWindow::DisplayConnectStatus);
+    connect(client, &TCPclient::sig_sendStat, this, &MainWindow::DisplayStat);
 }
 
 MainWindow::~MainWindow()
@@ -47,9 +44,10 @@ MainWindow::~MainWindow()
 /*!
  * \brief Группа методо отображения различных данных
  */
+// Получение времени
 void MainWindow::DisplayTime(QDateTime time)
 {
-
+    ui->tb_result->append("\nВремя на сервере: " + time.toString());
 }
 
 void MainWindow::DisplayFreeSpace(uint32_t freeSpace)
@@ -62,9 +60,17 @@ void MainWindow::SetDataReply(QString replyString)
 
 }
 
-void MainWindow::DisplayStat(StatServer stat)
+// Получение статистики
+void MainWindow::DisplayStat(StatServer s)
 {
-
+    ui->tb_result->append(QString("\nТекущее состояние сервера:\n\
+- принято байт: %1\n\
+- передано байт: %2\n\
+- принято пакетов: %3\n\
+- передано пакетов: %4\n\
+- время работы сервера: %5 сек\n\
+- кол-во подкл. клиентов: %6").arg(QString::number(s.incBytes), QString::number(s.sendBytes), QString::number(s.revPck),
+                                  QString::number(s.sendPck), QString::number(s.workTime), QString::number(s.clients)));
 }
 
 void MainWindow::DisplayError(uint16_t error)
@@ -72,7 +78,13 @@ void MainWindow::DisplayError(uint16_t error)
     switch (error)
     {
     case ERR_NO_FREE_SPACE:
+        ui->tb_result->append("Не достаточно места на сервере!");
+        break;
+
     case ERR_NO_FUNCT:
+        ui->tb_result->append("Функционал не реализован!");
+        break;
+
     default:
         break;
     }
@@ -155,14 +167,29 @@ void MainWindow::on_pb_request_clicked()
    {
        //Получить время
        case 0:
+       header.idData = GET_TIME;
+       break;
+
        //Получить свободное место
        case 1:
+       header.idData = GET_SIZE;
+       break;
+
        //Получить статистику
        case 2:
+       header.idData = GET_STAT;
+       break;
+
        //Отправить данные
        case 3:
+       header.idData = SET_DATA;
+       break;
+
        //Очистить память на сервере
        case 4:
+       header.idData = CLEAR_DATA;
+       break;
+
        default:
        ui->tb_result->append("Такой запрос не реализован в текущей версии");
        return;
